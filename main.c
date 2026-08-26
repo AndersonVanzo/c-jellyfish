@@ -21,6 +21,9 @@
 #define VIEW_FILL_RATIO 0.9f
 #define ANIMATION_LOOP_PERIOD (96.0f * PI)
 
+#define JELLYFISH_COUNT 16
+#define PHASE_STEP 13.0f
+
 typedef struct {
     float curve_x;
     float curve_y;
@@ -52,26 +55,33 @@ void precomputeCurveSamples(void) {
     g_radius_base_mean = (float)(radius_base_sum / CURVE_SAMPLE_COUNT);
 }
 
-void updateScreenPoints(float animation_time, float view_scale, Vector2 view_origin) {
-    const float drift_time = animation_time / 48.f;
-    const float bell_wave = sinf(animation_time * 0.5f);
+int updateScreenPoints(float animation_time, float phase_offset, int stride, float view_scale,
+                       Vector2 view_origin) {
+    const float drift_time = animation_time / 48.0f;
+    const float bell_wave = sinf(animation_time * 0.5f + phase_offset);
     const float pulse_offset = 1.5f - bell_wave * bell_wave * bell_wave / 3.0f;
-    const float anchor_phase = (g_radius_base_mean + pulse_offset) / 16.0f - drift_time;
+    const float anchor_phase =
+        (g_radius_base_mean + pulse_offset) / 16.0f - drift_time + phase_offset;
     const float anchor_x = 99.0f * sinf(anchor_phase) * g_follow_strength;
     const float anchor_y = 99.0f * sinf(anchor_phase * 4.0f) * g_follow_strength;
 
-    for (int index = 0; index <= CURVE_SAMPLE_COUNT; index++) {
-        const CurveSample *sample = &g_curve_samples[index];
+    int point_count = 0;
+    for (int sample_index = 0; sample_index <= CURVE_SAMPLE_COUNT; sample_index += stride) {
+        const CurveSample *sample = &g_curve_samples[sample_index];
         float pulse_radius = sample->radius_base + pulse_offset;
-        float drift_phase = pulse_radius / 16.0f - drift_time;
-        float breath = powf(pulse_radius, sinf(pulse_radius * pulse_radius - animation_time));
-        g_screen_points[index].x =
+        float drift_phase = pulse_radius / 16.0f - drift_time + phase_offset;
+        float breath =
+            powf(pulse_radius, sinf(pulse_radius * pulse_radius - animation_time + phase_offset));
+
+        g_screen_points[point_count].x =
             (99.0f * sinf(drift_phase) - anchor_x + sample->curve_x * breath) * view_scale +
             view_origin.x;
-        g_screen_points[index].y =
+        g_screen_points[point_count].y =
             (99.0f * sinf(drift_phase * 4.0f) - anchor_y + sample->curve_y * breath) * view_scale +
             view_origin.y;
+        point_count++;
     }
+    return point_count;
 }
 
 void ensureTrailBuffer(RenderTexture2D *trail_buferr) {
@@ -137,18 +147,27 @@ int main(void) {
         const float world_half_extent =
             CENTERED_HALF_EXTENT + (1.0f - g_follow_strength) * DRIFT_AMPLITUDE;
         const float view_scale = buffer_height * 0.5f * VIEW_FILL_RATIO / world_half_extent;
+        const float school_alpha = 1.0f - g_follow_strength;
         const Vector2 view_origin = {buffer_width * 0.5f, buffer_height * 0.5f};
 
         float halo = fmaxf(1.5f * pixel_scale, HALO_THICKNESS * view_scale);
         float core = fmaxf(0.7f * pixel_scale, CORE_THICKNESS * view_scale);
 
-        updateScreenPoints(animation_time, view_scale, view_origin);
-
         BeginTextureMode(trail_buffer);
         DrawRectangle(0, 0, (int)buffer_width, (int)buffer_height, TRAIL_FADE_COLOR);
         BeginBlendMode(BLEND_ADDITIVE);
-        DrawSplineLinear(g_screen_points, CURVE_SAMPLE_COUNT + 1, halo, GLOW_HALO_COLOR);
-        DrawSplineLinear(g_screen_points, CURVE_SAMPLE_COUNT + 1, core, GLOW_CORE_COLOR);
+        for (int jellyfish = 0; jellyfish < JELLYFISH_COUNT; jellyfish++) {
+            if (jellyfish > 0 && school_alpha <= 0.004f) {
+                break;
+            }
+            float alpha = (jellyfish == 0) ? 1.0f : school_alpha;
+            int point_count = updateScreenPoints(animation_time, jellyfish * PHASE_STEP,
+                                                 (jellyfish == 0) ? 1 : 4, view_scale, view_origin);
+            DrawSplineLinear(g_screen_points, point_count, halo,
+                             ColorAlpha(GLOW_HALO_COLOR, alpha));
+            DrawSplineLinear(g_screen_points, point_count, core,
+                             ColorAlpha(GLOW_CORE_COLOR, alpha));
+        }
         EndBlendMode();
         EndTextureMode();
 
