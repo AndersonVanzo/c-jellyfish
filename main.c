@@ -34,9 +34,9 @@ CurveSample g_curve_samples[CURVE_SAMPLE_COUNT + 1];
 Vector2 g_screen_points[CURVE_SAMPLE_COUNT + 1];
 float g_radius_base_mean;
 
-// 1 = centered
 // 0 = free swimming
-float g_follow_strength = 1.0f;
+// 1 = centered
+float g_follow_strength = 0.0f;
 
 void precomputeCurveSamples(void) {
     double radius_base_sum = 0.0;
