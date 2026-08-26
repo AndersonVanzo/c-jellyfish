@@ -97,11 +97,27 @@ int main(void) {
 
     RenderTexture2D trail_buffer = {0};
     float animation_time = 0.0f;
+    bool paused = false;
 
     while (!WindowShouldClose()) {
-        animation_time += (PI / 20.0f) * (GetFrameTime() * 30.0f);
-        if (animation_time >= ANIMATION_LOOP_PERIOD) {
-            animation_time -= ANIMATION_LOOP_PERIOD;
+        if (IsKeyPressed(KEY_SPACE)) {
+            paused = !paused;
+        }
+        if (IsKeyPressed(KEY_R)) {
+            animation_time = 0.0f;
+        }
+        if (IsKeyPressed(KEY_F)) {
+            g_follow_strength = (g_follow_strength > 0.5f) ? 0.0f : 1.0f;
+        }
+        if (IsKeyPressed(KEY_S)) {
+            TakeScreenshot("jellyfish.png");
+        }
+
+        if (!paused) {
+            animation_time += (PI / 20.0f) * (GetFrameTime() * 30.0f);
+            if (animation_time >= ANIMATION_LOOP_PERIOD) {
+                animation_time -= ANIMATION_LOOP_PERIOD;
+            }
         }
 
         ensureTrailBuffer(&trail_buffer);
