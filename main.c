@@ -11,9 +11,11 @@
 #define GLOW_HALO_COLOR ((Color){40, 90, 120, 255})
 #define GLOW_CORE_COLOR RAYWHITE
 
+#define HALO_THICKNESS 0.27f
+#define CORE_THICKNESS 0.11f
+
 #define CURVE_SAMPLE_COUNT 1500
 #define SUPERSAMPLE_FACTOR 2
-// #define WORLD_HALF_EXTENT 24.65f
 #define CENTERED_HALF_EXTENT 24.65f
 #define DRIFT_AMPLITUDE 99.0f
 #define VIEW_FILL_RATIO 0.9f
@@ -98,6 +100,7 @@ int main(void) {
     precomputeCurveSamples();
 
     RenderTexture2D trail_buffer = {0};
+    float follow_target = 1.0f;
     float animation_time = 0.0f;
     bool paused = false;
 
@@ -109,6 +112,8 @@ int main(void) {
             animation_time = 0.0f;
         }
         if (IsKeyPressed(KEY_F)) {
+            g_follow_strength +=
+                (follow_target - g_follow_strength) * fminf(1.0f, GetFrameTime() * 2.0f);
             g_follow_strength = (g_follow_strength > 0.5f) ? 0.0f : 1.0f;
         }
         if (IsKeyPressed(KEY_S)) {
@@ -134,15 +139,16 @@ int main(void) {
         const float view_scale = buffer_height * 0.5f * VIEW_FILL_RATIO / world_half_extent;
         const Vector2 view_origin = {buffer_width * 0.5f, buffer_height * 0.5f};
 
+        float halo = fmaxf(1.5f * pixel_scale, HALO_THICKNESS * view_scale);
+        float core = fmaxf(0.7f * pixel_scale, CORE_THICKNESS * view_scale);
+
         updateScreenPoints(animation_time, view_scale, view_origin);
 
         BeginTextureMode(trail_buffer);
         DrawRectangle(0, 0, (int)buffer_width, (int)buffer_height, TRAIL_FADE_COLOR);
         BeginBlendMode(BLEND_ADDITIVE);
-        DrawSplineLinear(g_screen_points, CURVE_SAMPLE_COUNT + 1, 3.0f * pixel_scale,
-                         GLOW_HALO_COLOR);
-        DrawSplineLinear(g_screen_points, CURVE_SAMPLE_COUNT + 1, 1.2f * pixel_scale,
-                         GLOW_CORE_COLOR);
+        DrawSplineLinear(g_screen_points, CURVE_SAMPLE_COUNT + 1, halo, GLOW_HALO_COLOR);
+        DrawSplineLinear(g_screen_points, CURVE_SAMPLE_COUNT + 1, core, GLOW_CORE_COLOR);
         EndBlendMode();
         EndTextureMode();
 
