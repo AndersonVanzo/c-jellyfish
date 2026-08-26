@@ -13,7 +13,9 @@
 
 #define CURVE_SAMPLE_COUNT 1500
 #define SUPERSAMPLE_FACTOR 2
-#define WORLD_HALF_EXTENT 24.65f
+// #define WORLD_HALF_EXTENT 24.65f
+#define CENTERED_HALF_EXTENT 24.65f
+#define DRIFT_AMPLITUDE 99.0f
 #define VIEW_FILL_RATIO 0.9f
 #define ANIMATION_LOOP_PERIOD (96.0f * PI)
 
@@ -127,7 +129,9 @@ int main(void) {
 
         const float pixel_scale = buffer_height / (float)GetScreenHeight();
 
-        const float view_scale = buffer_height * 0.5f * VIEW_FILL_RATIO / WORLD_HALF_EXTENT;
+        const float world_half_extent =
+            CENTERED_HALF_EXTENT + (1.0f - g_follow_strength) * DRIFT_AMPLITUDE;
+        const float view_scale = buffer_height * 0.5f * VIEW_FILL_RATIO / world_half_extent;
         const Vector2 view_origin = {buffer_width * 0.5f, buffer_height * 0.5f};
 
         updateScreenPoints(animation_time, view_scale, view_origin);
