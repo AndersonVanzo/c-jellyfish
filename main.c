@@ -122,8 +122,6 @@ int main(void) {
             animation_time = 0.0f;
         }
         if (IsKeyPressed(KEY_F)) {
-            g_follow_strength +=
-                (follow_target - g_follow_strength) * fminf(1.0f, GetFrameTime() * 2.0f);
             g_follow_strength = (g_follow_strength > 0.5f) ? 0.0f : 1.0f;
         }
         if (IsKeyPressed(KEY_S)) {
@@ -139,7 +137,7 @@ int main(void) {
 
         ensureTrailBuffer(&trail_buffer);
 
-        const float buffer_width = (float)trail_buffer.texture.height;
+        const float buffer_width = (float)trail_buffer.texture.width;
         const float buffer_height = (float)trail_buffer.texture.height;
 
         const float pixel_scale = buffer_height / (float)GetScreenHeight();
