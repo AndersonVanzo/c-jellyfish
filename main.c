@@ -110,7 +110,6 @@ int main(void) {
     precomputeCurveSamples();
 
     RenderTexture2D trail_buffer = {0};
-    float follow_target = 1.0f;
     float animation_time = 0.0f;
     bool paused = false;
 
