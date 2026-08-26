@@ -6,7 +6,7 @@
 # If raylib is built from source rather than installed via a package manager:
 #   make RAYLIB_PATH=/path/to/raylib
 
-TARGET := canopy
+TARGET := jellyfish
 SRC    := main.c
 WARN   := -Wall -Wextra -std=c11
 
